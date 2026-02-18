@@ -39,6 +39,27 @@ class NTPU_CSIE_Alevel_System(Department): #针对A level,3核心科目体系的
     analyser = Cambridge_Analyser(student_grades)
     final_score = analyser.calculate_weighted_score()
     super().__init__(name="台北大学质工系”，threshold=310,code = "CSIE",score=final_score) #继承
+class GrowthAnalyser:
+  def __init__(self,junior_score,senior_score):
+    self.junior_score = junior_score
+    self.senior_score = senior_score
+  def calculate_growth_rate(self):
+    return (self.junior_score - self.senior_score)/self.senior_score
+  def get_potential_status(self):
+    rate = self.calculate_growth_rate()
+    if rate >= 0.3: #如果进步超过30%就是强自驱力
+      return "High Potential/Strong Self-Driven"
+    elif rate >= 0.2 and rate < 0.3:
+      return "Fast Learner"
+    elif rate >= 0.1 and rate < 0.2:
+      return "Consistent learner"
+    elif rate >= 0 and rate < 0.1:
+      return ”Stable Learner"
+    else
+      return "Ongoing Academic Adaptation"
+    
+    
+
 
     
   
