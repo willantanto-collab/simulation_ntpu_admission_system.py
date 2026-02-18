@@ -39,11 +39,6 @@ class NTPU_CSIE_Alevel_System(Department): #针对A level,3核心科目体系的
     analyser = Cambridge_Analyser(student_grades)
     final_score = analyser.calculate_weighted_score()
     super().__init__(name="台北大学质工系”，threshold=310,code = "CSIE",score=final_score) #继承
-  def display_report(self):
-    result = self.analyse_admission() 
-    print(f"{datetime.date.today()} 申请人：{self.student_name}")
-    print(f"计算得分：{self.score} 门槛：{self.threshold}")
-    print(f"分析结果：{result}")
 
     
   
