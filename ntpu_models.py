@@ -1,5 +1,7 @@
 #project : NTPU Overseas Admission Analysis Engine
 #Purpose : 为华侨生申请台北大学提供精准的加权计算与录取模拟
+import datetime
+
 class Department:
   def __init__(self,name,threshold,code,score):
     self.name = name
@@ -30,6 +32,22 @@ class Cambridge_Analyser(AdmissionAnalyser):  #具体cambridge 的
     diffciulty_weight = 1.05 #每年可更改，不同的含金量系数
     unified_score = average_score * difficulty_weight #通用台北大学判断的统一成绩
     return unified_score
+class NTPU_CSIE_Alevel_System(Department): #针对A level,3核心科目体系的质工系录取模拟
+  def __init__(self,student_name,grades):
+    self.student_name = student_name
+    self.weights = {"Math":2.2,"CS":2.0,"Physics":1.8} #设定质工系特定权重
+    analyser = Cambridge_Analyser(student_grades)
+    final_score = analyser.calculate_weighted_score()
+    super().__init__(name="台北大学质工系”，threshold=310,code = "CSIE",score=final_score) #继承
+  def display_report(self):
+    result = self.analyse_admission() 
+    print(f"{datetime.date.today()} 申请人：{self.student_name}")
+    print(f"计算得分：{self.score} 门槛：{self.threshold}")
+    print(f"分析结果：{result}")
+
+    
+  
+    
     
     
 
