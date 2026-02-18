@@ -44,6 +44,8 @@ class GrowthAnalyser:
     self.junior_score = junior_score
     self.senior_score = senior_score
   def calculate_growth_rate(self):
+    if self.junior_score <= 0: 
+      return 0.0
     return (self.junior_score - self.senior_score)/self.senior_score
   def get_potential_status(self):
     rate = self.calculate_growth_rate()
@@ -55,7 +57,7 @@ class GrowthAnalyser:
       return "Consistent learner"
     elif rate >= 0 and rate < 0.1:
       return ”Stable Learner"
-    else
+    else:# 如果没有进步潜力
       return "Ongoing Academic Adaptation"
     
     
