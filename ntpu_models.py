@@ -59,6 +59,18 @@ class GrowthAnalyser:
       return ”Stable Learner"
     else:# 如果没有进步潜力
       return "Ongoing Academic Adaptation"
+class StudentProject: #分析学生提交的单一最优秀项目
+  def __init__(self,project_name,code_sample = ""):
+    self.project_name = project_name
+    self.code_sample = code_sample
+    self.metrics = {"pytest_scenarios":0,"exception_handlers":0,"advanced_logic_patterns":[],"engineering_score":0.0}
+  def analyse_robustness(self): #分析代码的稳健性
+    self.metrics["pytest_scenarios"] = self.code_sample.count("assert") #检查是否包含pytest的核心断言
+    self.metrics["exception_handlers"] = self.code_sample.count("try:") + self.code_sample.count("raise")
+    if self.metrics["exception_handlers"] > 0:
+      print(f”检测到{self.metrics['exception_handlers']} 的处理方案，判断已具备初步工程化”）
+  思维。”）
+ 
     
     
 
