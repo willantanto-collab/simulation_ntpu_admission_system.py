@@ -89,7 +89,17 @@ class StudentProject: #分析学生提交的单一最优秀项目
             break
         if "with open" in self.code_sample or "with " in self.code_sample: # Check for context managers,check for 'with' to ensure safe file.
           self.metrics["advanced_logic_patterns"].append("Context Managers")
- 
+  def calculate_capability_index(self):
+    base_score = len(self.metrics["advanced_logic_patterns"]) * 15
+    stability_bonus = (self.metrics["pytest_scenarios"] * 5) + (self.metric["exception_handlers"] * 10)
+    self.metrics["engineering_score"] = min(100, base_score + stability_bonys)
+    return self.metrics["engineering_score"]
+  def generate_admission_report(self)
+    score = self.calculate_capability_index()
+    if score > 70:
+      return "判定结果：该学生具备质工系所需的自主研发与系统设计潜力。”
+    else:
+      return "判定结果：基础稳固，建议增加工程实践深度。”
     
     
 
