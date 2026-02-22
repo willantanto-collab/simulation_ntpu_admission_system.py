@@ -1,5 +1,6 @@
 #project : NTPU Overseas Admission Analysis Engine
 #Purpose : 为华侨生申请台北大学提供精准的加权计算与录取模拟
+#name : Harry
 import datetime
 
 class IdentityValidator:
@@ -57,10 +58,12 @@ class NTPU_CSIE_Alevel_System(Department): #针对A level,3核心科目体系的
     analyser = Cambridge_Analyser(student_grades)
     final_score = analyser.calculate_weighted_score()
     super().__init__(name="台北大学质工系”，threshold=310,code = "CSIE",score=final_score) #继承
-class GrowthAnalyser:
-  def __init__(self,junior_score,senior_score):
+class GrowthAnalyser: #成绩上的潜力和改变
+  def __init__(self,junior_score,senior_score，potential_multiplier,activities):
     self.junior_score = junior_score
     self.senior_score = senior_score
+    self.potential_multiplier = 1.0 #初始调整数据，潜力乘数
+    self.activities = []
   def calculate_growth_rate(self):
     if self.junior_score <= 0: 
       return 0.0
@@ -77,6 +80,39 @@ class GrowthAnalyser:
       return ”Stable Learner"
     else:# 如果没有进步潜力
       return "Ongoing Academic Adaptation"
+  def add_activity(self,act_name,years,hours_per_week,is_team = False,is_leader = False):
+    activity_data = {'name'：act_name,'years':years,'hours':hours_per_week,'is_team':is_team,'is_leader=is_leader}
+    self.activities.append(activity_data)
+  def calculate_additionalpoints_activities(self):
+    if not self.activties:
+      self.potential_multiplier = 1.0
+      return self.potential_multiplier
+    total_growth_index = 0 #总和成长指标
+    for act in self.activities:
+      if act in self.activities: 
+        if act['years'] >= 3: #计算努力价值，在长期性
+          persistence_factor = 1.5 
+        else:
+          persistence_factor = 1.0
+        persistence_score = act['years'] * persistence_factor #计算该项活动的持久分
+      if act['hours'] > 15: #intensity_score 投入强度
+        intensity_score = 15 * 0.4
+      else:
+        intensity_score = act['hours'] * 0.4
+      bonus_points = 0 
+      if act['is_team']:
+        bonus_points += 2.0 #团队协作的加点初始定义
+        if act ['is_leader']:
+          bonus_points += 3.0 #因为更有领导能力，加分更多
+      #统计该活动的贡献价值
+      activity_impact = persistence_score + intensity_score + bonus_points
+      total_points += activity_impact
+    if total_points > 25:
+      maximum_points = 25 #防止溢出，该分数上线
+    else:
+      maximum_points = total_points
+self.potential_multiplier = 1 + (limited_points / 100) * 0.6 
+return round(self.potential_multiplier,3) #确保计算严谨，精确     
 class StudentProject: #分析学生提交的单一最优秀项目
   def __init__(self,project_name,code_sample = ""):
     self.project_name = project_name
