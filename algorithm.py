@@ -1,24 +1,28 @@
 class SearchManager:
     def __init__(self, data_list):
         self.__data = data_list  
-        self.comparisons = 0     # 记录比较次数，考试常考复杂度分析
-    def linear_search(self, target): #找到在哪个位置
-        for index in range(len(self.__data)):
+        self.comparisons = 0     
+        self._cache = {}  # 缓存，避免重复的行为计算
+    def linear_search(self, target):
+        if target in self._cache:  # 增加缓存检查，如果找过就直接给结果
+            return self._cache[target]
+        for index, value in enumerate(self.__data): # 使用 enumerate 替代 range(len())，更简洁高效，他是用来循环时自动一边点名，一边报数，不用自己动手写代码去数现在是第几个的一种流程。
             self.comparisons += 1
-            if self.__data[index] == target:
-                return index
+            if value == target:
+                self._cache[target] = index #存入缓存
+                return index  
+        self._cache[target] = -1
         return -1
-    def find_all(self, target): #列出所有能找到的位置
-        indices = []
-        for index in range(len(self.__data)):
-            if self.__data[index] == target:
-                indices.append(index)
-        return indices
-    def get_efficiency_report(self, target): #查找东西的速度
+    def find_all(self, target):
+        results = []
+        for index, value in enumerate(self.__data):
+            if value == target:
+                results.append(index)
+        return results
+    def get_efficiency_report(self, target):  # 只负责生成好看的报告，更简洁
         result = self.linear_search(target)
-        status = f"Found at index {result}" 
         if result != -1:
-            status = f"已定位该申请人，存储索引为: {result}"
+            status = f"该申请人的相关数据: {result}"
         else:
-            status = "查无此人，未提交申请或编号错误"
-
+            status = "查无此人，请核对编号"
+        return f"查询报告 ｜ 目标: {target} ｜ 结果: {status} ｜ 累计比较: {self.comparisons}次"
