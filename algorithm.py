@@ -57,4 +57,19 @@ class SecurityVertifier:
             print(f"Change of data detected in {node.name}")
             return False #any child tamper triggers in root invalidation
         return True 
+
+#初次尝试写法律逻辑代码化
+class CyberLaw:
+    def __init__(self, statute_name, severity_level):
+        self.statute_name = statute_name  # 法律名称
+        self.severity_level = severity_level # 严重等级
+class UnauthorizedAccessLaw(CyberLaw):
+    def __init__(self, threshold_attempts=3): #threshold_attempts = 3 意思是同一个 IP 尝试非法登录3 次，第一次和第2 次可能因为不小心之类的，第3 次设定为非法登陆
+        super().__init__("电脑罪行条例，非法入侵", "High") #定义等级为高严重等级
+        self.threshold = threshold_attempts
+    def judge(self, logs): #解释情况：根据抓取的痕迹，判断是否违法
+        for ip, count in logs.items(): # 统计同一个 IP 的异常行为
+            if count > self.threshold: #
+                return f"逻辑判定: {ip} 违反了 {self.statute_name}，证据已确凿。"
+        return "继续侦查中，关注异常行为”
     
