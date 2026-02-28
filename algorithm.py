@@ -72,4 +72,32 @@ class UnauthorizedAccessLaw(CyberLaw):
             if count > self.threshold: #
                 return f"逻辑判定: {ip} 违反了 {self.statute_name}，证据已确凿。"
         return "继续侦查中，关注异常行为”
+
+#Scapy,初次尝试防守黑客攻击者的代码
+#自学来的，自学链接用的这个 https://www.youtube.com/watch?v=f4Pr2X98UfE 和其他搜索来源
+#https://www.youtube.com/watch?v=f4Pr2X98UfE 这个链接主要讲的是黑客用scapy 的基础攻击手段。
+#所以我尝试去理解攻击者的攻击，并试着用代码来反过来从他们攻击的方式防守。我先去理解他们的攻击逻辑。
+#还有就是，我写中文注释时担心兼容性，所以专门去查了 Python 编码规范，添加了下面这一行，这个coding and utf8
+# -*- coding: utf-8 -*-
+from scapy.all import sniff,IP,TCP
+
+def trace_packet(packet):
+    if packet.haslayer(IP) and packet.haslayer(TCP): #只关注具有潜在攻击特征的TCP 数据包
+      src_ip = packet[IP].src #[IP]：打开packet的外壳，查看网络层（IP层）。.src：Source 是发件人的 IP 地址。.dst：Destination（目的地）是收件人的 IP 地址。
+      dst_ip = packet[IP].dst
+      if packet[TCP].flags == "S": #模拟黑客追踪，如果发现某个IP 在短时间尝试了大量的SYN 同步包.flags：查看这个包的标志说法，S 代表 SYN，SYN 同步的意思
+        print(f"追踪痕迹，查找潜在扫描行为：{src_ip} -> {dst_ip}")#实时反馈：显示攻击源 IP 到目标 IP 的流向
+        save_evidence_to_github_style_log(src_ip,"端口扫描尝试")#调用日志函数：将攻击源和行为特征存入本地文件，进行安全取证
+
+def save_evidence_to_github_style_log(ip,behaviour): #Log 是程序在运行过程中，自动记录下来的事件信息。
+  with open("forensics_report.log","a", encoding="utf-8") as f: # 使用 with 确保文件操作安全关闭，"a" 模式是为了把新发现的攻击证据追加到日志末尾而不覆盖旧记录。
+    f.write(f"IP: {ip} ,行为：{behaviour},状态：已取证\n") # \n 是换行符，确保每条攻击证据独立成行，方便后续自动化审计和搜索。
+
+print("正在尝试监控网络痕迹...需要管理员权限")
+sniff(filter = "ip",prn = trace_packet,count = 10) #count = 10 意思是抓取10 个包演示，prn 是回调函数
+
+
+
+    
+
     
