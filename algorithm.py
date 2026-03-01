@@ -95,6 +95,25 @@ def save_evidence_to_github_style_log(ip,behaviour): #Log 是程序在运行过�
 
 print("正在尝试监控网络痕迹...需要管理员权限")
 sniff(filter = "ip",prn = trace_packet,count = 10) #count = 10 意思是抓取10 个包演示，prn 是回调函数
+class AdvancedLegalAnchor: #用来做身份核实，确实是申请人本人所为，而非他人冒用 IP 进行的恶意栽赃
+    def __init__(self):
+        self.identity_map = {}  #存储 申请人ID -> {设备指纹,临时出入证，常用IP}
+    def identify_subject(self, student_id, capture_data):
+        # 从 Scapy 抓到的包里提取出所有身份特征
+        captured_ip = capture_data.get("ip")
+        captured_fingerprint = capture_data.get("fingerprint") #浏览器指纹
+        captured_token = capture_data.get("token")           #只有本人才有的登录 Token
+        user_anchor = self.identity_map.get(student_id)
+        if not user_anchor:
+            return 0.1 # 关联度极低，不足以启动行政处分
+
+        #逻辑加权：IP 匹配只占 20%，Token 匹配占 80%
+        match_score = 0
+        if captured_ip == user_anchor["ip"]:
+            match_score += 0.2
+        if captured_token == user_anchor["token"]:
+            match_score += 0.8 # 只有私钥或 Token 匹配，才能证明是本人操作
+        return match_score
 
 
 
