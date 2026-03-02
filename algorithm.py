@@ -114,6 +114,34 @@ class AdvancedLegalAnchor: #用来做身份核实，确实是申请人本人所�
         if captured_token == user_anchor["token"]:
             match_score += 0.8 # 只有私钥或 Token 匹配，才能证明是本人操作
         return match_score
+import threading # 建立同步锁：避免 Scapy 在快速抓包时，多个任务同时改写数据导致冲突
+class AdvancedLegalAnchor:
+    def __init__(self):
+        self._lock = threading.Lock() # 防止 Scapy 抓包太快，多个任务同时改数据导致乱掉
+        self.identity_map = {}  # 存储 身份信息，如准考证，{指纹, 临时出入证, IP}
+    def identify_subject(self, student_id, capture_data):
+        # 先把要对比的数据拿出来
+        captured_ip = capture_data.get("ip")
+        captured_token = capture_data.get("token")     
+        # 如果数据不全，就没法比，返回 0
+        if captured_ip == None or captured_token == None:
+            return 0       
+        #我在网上认为通常而言如果Advanced 的东西都是有锁的，我就搜索了一下python 的这个可不可以有锁，知道了这个acquire and relase，证明我的自学
+        self._lock.acquire() # 锁住，不让别人乱动内存
+        user_anchor = self.identity_map.get(student_id)
+        self._lock.release() # 查完了，解锁释放
+        if not user_anchor:
+            # 还没登记过的学生，给 1 的基础分，统一用整数方便后续做‘分级处分'
+            return 1
+        # 逻辑：IP占20分，Token占80分
+        match_score = 0   
+        # 严格比对：确保 IP 和 Token 均存在且匹配
+        if captured_ip == user_anchor.get("ip"):
+            match_score += 20        
+        if captured_token == user_anchor.get("token"):
+            match_score += 80 
+        return match_score # 返回 0-100 的整数，方便后续逻辑做‘分级处分'
+
 
 
 
