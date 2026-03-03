@@ -141,8 +141,40 @@ class AdvancedLegalAnchor:
         if captured_token == user_anchor.get("token"):
             match_score += 80 
         return match_score # 返回 0-100 的整数，方便后续逻辑做‘分级处分'
+# 用来判断所有招生数据是否真实、合规
+anchor = AdvancedLegalAnchor()
+# 模拟系统：当学生正式在台北大学官网登录时，使用后台记录下他的“合法身份”
+# 使用“准考证号”作为唯一的媒介（如 1140001）
+anchor.identity_map["1140001"] = {
+    "ip": "112.x.x.x",             # 学生登录时的物理地址
+    "token": "SESSION_XYZ_999",     # 只有本人通过账号密码登录才持有的一个核心身份证明
+    "candidate_name": "张同学"  # 映射到真实姓名，确保法律处分的精准性
+    "status" : " "
+}
+# 实时风险监测：当你的 Scapy 模块在流量中抓到疑似攻击包时
+# 此时系统会自动提取该数据包的特征，生成“嫌疑信息快照” (capture_info)
+capture_info = {
+    "ip": "112.x.x.x",             # IP 地址匹配，嫌疑产生，但不能排除是公用 WiFi 或他人冒用
+    "token": "FAKE_TOKEN"           # 关键点，临时出入证明非法，这意味着这波操作可能并非由张同学本人发出
+}
+# 计算证据的关联度 (Correlation)
+# 系统会自动对比抓到的“嫌疑快照”与后台“合法锚点”的一致性
+# 根据之前的权重算法：IP 匹配(0.2) + Token 匹配(0.8)
+# 因为 Token 错误，此处计算结果 correlation = 0.2
+correlation = anchor.identify_subject("1140001", capture_info) 
+# 为后续改变处理，留下改变可能性
+# 只有当证据确凿，关联度超过 0.7 时，才启动行政处分
+if correlation > 0.7:
+    target_id = "1140001"
+    status = "DISQUALIFIED" # 将准考证 1140001 的状态修改为“取消资格（DISQUALIFIED）”
+    pass 
+else:
+    # 疑罪从无
+    # 系统判定：虽然 IP 一致，但核心身份的不符，无法排除“他人冒用或栽赃”的可能性
+    # 系统（pass），不产生任何惩罚，保护张同学那唯一名额的申请权利不受干扰
+    pass
 
-
+#后面可以再改成非固定的ID 或增加一些代码
 
 
     
