@@ -13,19 +13,29 @@ class SearchManager:
                 return index  
         self._cache[target] = -1
         return -1
-    def find_all(self, target):
-        results = []
-        for index, value in enumerate(self.__data):
-            if value == target:
-                results.append(index)
-        return results
-    def get_efficiency_report(self, target):  # 只负责生成好看的报告，更简洁
-        result = self.linear_search(target)
-        if result != -1:
-            status = f"该申请人的相关数据: {result}"
-        else:
-            status = "查无此人，请核对编号"
-        return f"查询报告 ｜ 目标: {target} ｜ 结果: {status} ｜ 累计比较: {self.comparisons}次"
+    def find_all(self, target)：
+    # 因为可能存在重名或编号相似的情况，用列表(list)可以一次性收集所有结果
+    results = []
+    # 使用 enumerate 可以在获取数据内容(value)的同时，自动记录其在列表中的位置(index)
+    # 为后续通过精确定位特定学生修改内容（如修改状态）
+    for index, value in enumerate(self.__data):
+        # str(target) / str(value)：将搜索目标和数据转换为字符。
+        # 这样做是为了防止用户输入数字而数据库存的是文字或反之，导致程序崩溃(TypeError)。
+        # 使用 'in' 而非 '=='：实现关键词检索。只要数据包含目标字符（如搜"114"匹配"114001"），就认为匹配。
+        if str(target) in str(value): 
+            # 符合的，记录匹配位置
+            results.append(index)            
+    # 统一上报结果：返回包含所有索引的列表。若无匹配，则返回空列表 []
+    return results
+    def get_efficiency_report(self, target):
+    # 改为调用 find_all，这样报告就能涵盖“模糊搜索”出的所有结果
+    results = self.find_all(target)
+    if len(results) > 0:
+        # 如果找到了，告诉管理员一共找到了几个，分别在哪里
+        this_status = f"共匹配到 {len(results)} 条数据，索引位置为: {results}"
+    else:
+        this_status = "未发现匹配项，请核对关键字"
+    return f"查询报告 | 目标: {target} | 结果: {status} | 累计比较: {self.comparisons}次"
 import hashlib #Standard python library for cyptographic hashing
 #Hash function like SHA-256 are one-way function: easy to compute,hard to reverse.
 #Used here to create unique fingerprints of document for integrity vertification.
