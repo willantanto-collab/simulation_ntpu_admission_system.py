@@ -1,0 +1,16 @@
+# 我之前写的scapy 在algorithm.py 那个文件实现仅能识别攻击类型，但在 WNM Lab 的研究中，
+# 我发现陈教授的论文中提到攻击源的“网络拓扑位置” (Hop count) 
+# 我看不懂那么多，但是我在学习 Scapy 的 IP() 类时，产生了一个疑问：为什么它会有 ttl, tos, flags 这些字段？还有这些名字是谁定义的？
+# 于是我顺着 Scapy 的官方文档去搜了 IPv4 Standard，最终锁定了互联网协议的—— RFC 791
+# 因此引入 RFC 791 的 TTL 逻辑进行优化。
+# 自学来自网站 WireShark Scapy
+def trace_packet(packet):
+    if packet.haslayer(IP) and packet.haslayer(TCP): # 检查包有没有 IP 层和 TCP 层
+        src_ip = packet[IP].src  # 拿到发件人的 IP 地址 (src 就是 Source)
+        ttl_value = packet[IP].ttl  # 拿到这个包的寿命 TTL。我查了 RFC 791，这是 IP 协议里专门管“生存时间”的
+        if packet[TCP].flags == "S": # 如果 TCP 标志位是 "S" (SYN)，说明对方想跟我建立连接，这常被黑客用来扫描
+            # 【我的发现】：为什么用 64 减？那是因为我查到大多数 Linux 初始 TTL 是 64。
+            # 减出来的数字就是这个包一路上“跳”过了多少台路由器。
+            # 这个数字能帮我判断黑客离我有多远，是陈教授 WNM 实验室很看重的“拓扑位置”
+            print(f"Source: {src_ip}, Distance between router is {64 - ttl_value} jumps") 
+
