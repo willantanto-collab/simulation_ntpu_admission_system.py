@@ -29,5 +29,42 @@ def forensic_check_layer4(packet)： # 调研陈教授Life Lab后，将逻辑重
       return "检测到SYN-ACK:目标响应，连接正在建立"
     elif flags == "A": # ACK：标志三次握手完成，连接进入“实质侵害”阶段
       return "检测到 ACK:连接已建立，法律判定为”实质侵入”"
-    return "非 TCP 关键封包" #默认返回：过滤非握手阶段的背景流量，确保鉴识逻辑的精准度
-   
+    return "非 TCP 关键封包" #默认返回：过滤非握手阶段的背景流量，确保鉴识逻辑的精准度from scapy.all import *
+import time
+TARGET_IP = "192.168.1.100"  # 模拟的IoT网关地址
+SECRET_DATA = "PROMPT_ID_791:ACTION_BYPASS_LEGAL_FILTER" # 模拟一段经过“质询工程”处理后的法律存证
+def send_covert_packet(target, message):
+    print(f"正在通过 Layer 3 协议向 {target} 发送隐蔽数据...")
+    # 构造 IP 层 (Layer 3)
+    # 初始化 IPv4 报头 (符合 RFC 791 标准)
+    # 在 6G/IoT 仿真中，该字段用于标识边缘计算节点或受控终端
+    ip_layer = IP(dst=target)  # dst (Destination Address): 目标 IP 字段，决定了 Layer 3 路由的终点
+
+    #协议封装逻辑 (Protocol Stack Construction)
+    # 利用 Scapy 的层叠操作符 (/) 构造非标准协议栈
+    # Layer 3 (IP）： 处理寻址与路由
+    # Layer 3.5 (ICMP)： 绕过 Layer 4 (TCP) 的三次握手损耗
+    # Payload (Raw Data)： 将 6G 存证指令 (RPG-791) 注入 ICMP 载荷区，实现极简信令传输
+    icmp_packet = ip_layer / ICMP() / message 
+
+    # 执行 Layer 3 原始套接字注入 (Raw Socket Injection)
+    # 绕过系统标准传输层规制，直接将封装好的 ICMP 帧投递至链路层
+    # verbose=False: 减少 I/O 开销，适用于 6G 边缘节点的高频信令仿真
+    # 发送数据包
+    #"Sent 1 packets"，查阅Scapy官方help(send)确认verbose参数控制输出
+    # 运行这个使用的工具：Python IDE
+    # 发现过程：while循环模拟6G心跳时，控制台被"Sent 1 packets"刷屏，导致无法观察L3载荷。
+    # 解决逻辑：在终端输入 help(send) 查阅函数定义，发现 verbose 参数默认为开启，平板设为 False 以保持控制台整洁
+    send(icmp_packet, verbose=False)
+    print(f"数据包已发出，载荷长度: {len(message)} bytes") # 通过Wireshark观察到Data字段动态变化，故用Python内置len()实时监控L3载荷大小以评估通信效率
+if __name__ == "__main__":
+    # 模拟 RPG 791 项目中的自动化质询指令发送
+    print("NTPU WMN Lab 模拟环境(RPG-791)")
+    try:
+        while True:
+            send_covert_packet(TARGET_IP, SECRET_DATA)
+            # 设置 5 秒实验间隔。源于平板运行环境的性能限制，且为了手动对齐 Wireshark 抓包序列与代码输出，确保能逐帧分析 L3 字段
+            time.sleep(5)  #实现非连续性信令传输 (Asynchronous Signaling)，模拟 6G/IoT 低功耗模式下的“心跳频率”
+    except KeyboardInterrupt: # 针对平板(Pydroid 3等)运行环境，捕获点击停止按钮产生的信号，避免控制台弹出一整屏红色的报错代码
+        print("\n 实验停止")
+
