@@ -68,3 +68,31 @@ if __name__ == "__main__":
     except KeyboardInterrupt: # 针对平板(Pydroid 3等)运行环境，捕获点击停止按钮产生的信号，避免控制台弹出一整屏红色的报错代码
         print("\n 实验停止")
 
+from scapy.all import *
+def cross_layer_analysis(pkt): # pkt = packet
+    #抓取 RadioTap 头部，获取 Layer 2的物理层链路强度 (RSSI)
+    if pkt.haslayer(RadioTap):
+        #rssi_value 提取自 RadioTap 层，是设备的信号强度 (单位为 dBm)
+        rssi_value = pkt.dBm_AntSignal 
+        
+        # 提取 TCP 拥塞控制的表征——窗口大小
+        if pkt.haslayer(TCP) and rssi_value is not None:
+            tcp_window = pkt[TCP].window
+            src_ip = pkt[IP].src       
+            
+            # 控制台实时验证：观测RSSI下降与TCP窗口的协同变化
+            print(f"[Link-Awareness Test] Source: {src_ip}")
+            print(f"  Layer 2 (RSSI): {rssi_value} dBm")
+            print(f"  Layer 4 (TCP Win): {tcp_window}")            
+            
+            #实验观测记录逻辑：dBm 为负值，-75 比 -40 更弱
+            if rssi_value < -70: 
+                print("链路质量劣化：RSSI 跌至阈值以下。")
+                if tcp_window < 1000: # 假设观测到窗口剧烈收缩
+                    print("验证成功：TCP 表现过于‘保守’，误将链路损耗判定为网络拥塞。\n")
+
+# 启动监听，需网卡支持 Monitor Mode
+# store=0 确保长时间实验不会占用过多平板/电脑内存
+sniff(iface="wlan0mon", prn=cross_layer_analysis, store=0) #prn 是一个回调函数
+
+
