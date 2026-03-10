@@ -116,5 +116,37 @@ def cross_layer_analysis(pkt): # pkt = packet
 # store=0 确保长时间实验不会占用过多平板/电脑内存
 sniff(iface="wlan0mon", prn=cross_layer_analysis, store=0) #prn 是一个回调函数
 
+#layer 1:
+from scapy.all import *
+# 物理层模拟 (Layer 1 Metadata)
+# 使用RadioTap层模拟特定的物理层参数，如发射功率、信道
+# 在Lessig理论中的一种前置的“空间法律”
+radio_layer = RadioTap(present='Rate+Channel+dBm_AntSignal',Rate=2.0，ChannelFrequency=2412, dBm_Power_Signal=-30)
+# 链路层构建 (Layer 2 - Code is Law)
+# 构造一个 802.11 Beacon 帧。Addr2 是发送方，Addr3 是 BSSID。
+# 这里的代码逻辑决定了周围设备是否能识别并受其约束。
+# 因为真正的 Layer 1 需要昂贵的 SDR（软件定义无线电） 硬件才能直接操作电磁波
+# 在没有特定设备的情况下，我选择用Scapy这种方式，通过代码在 Layer 2 伪造物理参数来达到“模拟质询”的效果。
+# 我最初只是好奇为什么手机能搜到 WiFi 名字。通过查资料，我发现所有路由器都在不停广播一个叫 Beacon 的东西。
+# 顺着这个线索，我找到了 Scapy 这个工具，并在它的文档里看到了 802.11 协议的结构图
+# 在 802.11 协议的代码架构中，type=0 代表它是管理类数据包，而 subtype=8 则是它的法律身份编号
+dot11 = Dot11(type=0, subtype=8, 
+              addr1="ff:ff:ff:ff:ff:ff", 
+              addr2="aa:bb:cc:dd:ee:ff", 
+              addr3="aa:bb:cc:dd:ee:ff")
+# 质询载荷 (Inquiry Engineering)
+# 将 Lessig 的核心思想作为 Payload。在质询工程中，载荷用于测试系统对非标准数据的响应。
+# Beacon 更像无线世界的“强制公告”，它定义了该信号覆盖范围内的所有连接规则。
+beacon = Dot11Beacon(cap="ESS+privacy") #将安全约束直接写入物理帧，利用Code is Law强制周围设备必须匹配特定加密逻辑才能建立连接。
+essid = Dot11Elt(ID="SSID", info="WMN_Lab_Code is Law") #通过 SSID 将法律声明广播为物理空间的“公告”，直接验证设备在特定代码架构下的连接边界。
+legal_payload = Raw(load="[Inquiry] Protocol is the Regulatory Architecture.") #将质询逻辑作为原始负载注入，测试系统是否能在遵守协议“法律”的同时，正确过滤这些非标准的架构指令
+#封装发送
+packet = radio_layer / dot11 / beacon / essid / legal_payload
+print("Packet Structure")
+packet.show() 
+
+# 注意：以下操作需要支持 Monitor 模式的网卡
+# sendp(packet, iface="wlan0mon", count=10, inter=0.1)
+
 
 
