@@ -148,5 +148,22 @@ packet.show()
 # 注意：以下操作需要支持 Monitor 模式的网卡
 # sendp(packet, iface="wlan0mon", count=10, inter=0.1)
 
+from scapy.all import *
 
-
+# 定义半导体常见的 Modbus TCP 探测逻辑 (模拟 SECS/GEM 的质询过程)
+def compliance_inquiry(target_ip):
+    # 构造一个非标准/畸形的质询封包 (Inquiry Packet)
+    # 目的：测试设备是否会拒绝不符合合规契约的非法指令
+    # 通过 Wireshark 官方提供的 ModbusTCP 样本封包（pcap文件），观察其十六进制流（Hex Stream），发现其报文头（MBAP Header）前 7 个字节有固定规律，从而学会了如何在 Scapy 中构造对应的 Raw(load=...)。
+    # 在研究半导体 OT 资安时，我查阅了工业协议标准。了解到Modbus TCP 作为工业自动化中最基础的协议之一，其官方标准端口（Well-known Port）就是 502。虽然它很简单，但它能为我后续理解更复杂的半导体专用协议（如基于 TCP 的 HSMS/SECS-II）做基础。
+    packet = IP(dst=target_ip)/TCP(dport=502)/Raw(load="\x00\x01\x00\x00\x00\x06\x01\x05\x00\x00\xff\x00") #实际操作中需先完成三向握手或利用 Scapy 的StreamSocket模拟长连接，以符合半导体 HSMS 协议的连线状态要求。
+    
+    # 发送并等待响应
+    response = sr1(packet, timeout=2, verbose=0)
+    
+    if response:
+        # 逻辑：如果设备竟然执行了非法指令，说明其“合规防火墙”有漏洞
+        print(f"警报：设备 {target_ip} 违反安全法规，执行了未授权质询！")
+    else:
+        # 逻辑：符合合规逻辑，设备拒绝了非授权访问
+        print(f"通过：设备 {target_ip} 具备合规自卫能力。")
