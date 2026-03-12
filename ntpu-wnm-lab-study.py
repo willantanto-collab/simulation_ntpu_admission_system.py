@@ -167,3 +167,28 @@ def compliance_inquiry(target_ip):
     else:
         # 逻辑：符合合规逻辑，设备拒绝了非授权访问
         print(f"通过：设备 {target_ip} 具备合规自卫能力。")
+
+# Layer 5
+
+# 定义会话状态，L5 的核心就是知道现在是谁在对话，对话到第几次了
+SESSION_ID = "NTPU-6G-TEST" 
+session_counter = 0
+
+def send_layer5_packet(target, message):
+    global session_counter
+    session_counter += 1
+    
+    # Layer 5 核心：构造会话层头部
+    # 功能：确保接收方知道这是属于哪个会话的第几个包
+    l5_header = f"[{SESSION_ID}][SEQ:{session_counter}]" #引入SEQ 序号模拟TCP握手逻辑，确保ICMP隐蔽传输的顺序性与防重放攻击。
+    
+    # 逻辑衔接：将 L5 头部与原始数据拼接，交给 L3/L4 发送
+    # 层级封装：L5嵌套在L4 的 Payload里
+    combined_message = l5_header + message
+    
+    # 调用之前我写好的 Layer 3/4 函数
+    send_covert_packet(target, combined_message)
+
+#发送带会话标识的指令
+send_layer5_packet(TARGET_IP, "RPG-791-SYNC")
+
