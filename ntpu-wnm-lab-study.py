@@ -192,3 +192,45 @@ def send_layer5_packet(target, message):
 #发送带会话标识的指令
 send_layer5_packet(TARGET_IP, "RPG-791-SYNC")
 
+#layer 6
+# 在写 Layer 5 时，我发现原始二进制发出去全是乱码且包很大，尝试搜索能不能把这些不可见的乱码变成普通字母，并让它变小点
+# 这两个关键点的搜索下顺着“数据压缩”和“二进制转文本”这两个点，我了解到了 zlib 和 base64
+import base64
+import zlib
+
+# Layer 6（加密与压缩）
+def layer6_presentation(raw_data, encrypt=True):
+    # 功能：将原始字符串转换为经过压缩和加密的二进制流
+    # 向上对接 L7 业务数据，向下交付给我写的L5会话函数
+    # 压缩 (Compression)：针对wmn无线带宽优化
+    #.encode()：将文本翻译成二进制，解决不同设备字符不通的问题
+    compressed = zlib.compress(raw_data.encode()) #消除冗余，将原始指令体积缩减 30%-70%
+    
+    # 加密(Encryption)：体现Code is Law的安全边界
+    # 使用XOR模拟流加密
+    key = 0x5A  # 简单学到的对称密钥
+    # 将二进制数据通过位运算彻底打乱成不可读的乱码，且仅需相同密钥即可无损还原。
+    # for b in compressed 把压缩后的二进制数据逐个字节进行处理
+    # b ^ key 让每个字节与密钥进行一次二进制碰撞，让其瞬间把原数据变成乱码的一种写法。
+    # bytes [....] 把这一堆处理完的乱码数字重新打包，还原成计算机可以直接发送的二进制包
+    encrypted = bytes([b ^ key for b in compressed])
+    
+    #编码 (Encoding)：确保数据在非正常字符环境下也能传输
+    encoded_data = base64.b64encode(encrypted).decode() #base64.b64encode 能把加密后乱码指令一样的二进制位，强制转换成由 64 个标准字母数字组成的纯文本。
+    
+    print(f“Data Transformed: {len(raw_data)}B -> {len(encoded_data)}B (Base64)”） #展示数据处理前后的体积变化
+    return encoded_data
+
+#逻辑，利用以上Layer 5 写过的代码逻辑，嵌入 L6 转换
+def send_layer6_to_5_packet(target, original_msg): #original message,orignal_msg
+    # 先通过 Layer 6 处理数据
+    formatted_msg = layer6_presentation(original_msg)
+    
+    # 再交给 Layer 5 处理会话
+    # L5 的功能是不关心内容是否加密的状态，它只负责打上 [SESSION_ID] 标签
+    send_layer5_packet(target, formatted_msg)
+
+#调用
+send_layer6_to_5_packet(TARGET_IP, "CRITICAL_COMMAND_RFC791")
+
+
