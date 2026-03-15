@@ -138,10 +138,14 @@ dot11 = Dot11(type=0, subtype=8,
 # 将 Lessig 的核心思想作为 Payload。在质询工程中，载荷用于测试系统对非标准数据的响应。
 # Beacon 更像无线世界的“强制公告”，它定义了该信号覆盖范围内的所有连接规则。
 beacon = Dot11Beacon(cap="ESS+privacy") #将安全约束直接写入物理帧，利用Code is Law强制周围设备必须匹配特定加密逻辑才能建立连接。
-essid = Dot11Elt(ID="SSID", info="WMN_Lab_Code is Law") #通过 SSID 将法律声明广播为物理空间的“公告”，直接验证设备在特定代码架构下的连接边界。
+essid = Dot11Elt(ID="SSID", info="Code is Law", len=len("Code is Law")) #这是无线网络的“身份公告”，不仅通过SSID广播网络名称，还利用 len 参数严格对齐字节长度，确保物理层扫描器能合法解析出这个由“代码”定义的空间边界。
+rates = Dot11Elt(ID="Rates", info=b"\x82\x84\x8b\x96") #宣告物理层支持的传输速率（1,2,5.5,11Mbps），为协议握手的后续改变做准备
+dsset = Dot11Elt(ID="DSset", info=b"\x06") #确保逻辑层与RadioTap物理频率实现硬性对齐
+
 legal_payload = Raw(load="[Inquiry] Protocol is the Regulatory Architecture.") #将质询逻辑作为原始负载注入，测试系统是否能在遵守协议“法律”的同时，正确过滤这些非标准的架构指令
 #封装发送
-packet = radio_layer / dot11 / beacon / essid / legal_payload
+
+packet = radio_layer / dot11 / beacon / essid / rates / dsset / legal_payload
 print("Packet Structure")
 packet.show() 
 
