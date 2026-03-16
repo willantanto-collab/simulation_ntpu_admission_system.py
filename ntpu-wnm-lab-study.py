@@ -30,27 +30,43 @@ def forensic_check_layer4(packet)： # 调研陈教授Life Lab后，将逻辑重
     elif flags == "A": # ACK：标志三次握手完成，连接进入“实质侵害”阶段
       return "检测到 ACK:连接已建立，法律判定为”实质侵入”"
     return "非 TCP 关键封包" #默认返回：过滤非握手阶段的背景流量，确保鉴识逻辑的精准度from scapy.all import *
-# 参考 Code is Law 的 TCP 系统 
 from scapy.all import *
+import time
+
 # 定义合法访问的白名单（模拟台积电内部受保护网段）
 AUTHORIZED_IPS = ["192.168.1.100", "192.168.1.101"]
+
+# 【状态审计池】用于记录每个 IP 的 SYN 请求频率，识别意图
+# 真正的 Layer 4 审计必须具备“记忆”，才能分辨请求还是攻击
+connection_history = {} 
+
 def compliance_audit_sniffer(packet):
-    if packet.haslayer(TCP):
+    if packet.haslayer(TCP) and packet[TCP].flags == 'S':
         ip_src = packet[IP].src
-        flags = packet[TCP].flags        
+        now = time.time()
+        
         # 意图审查 (Intent Audit)
-        if flags == 'S': #SYN 包，请求进入系统的
-            if ip_src not in AUTHORIZED_IPS:
-                # 【Compliance Check】 违反越权访问规制
-                print(f"[警告] 非法入侵企图：源 IP {ip_src} 试图发起未经授权的入侵。")
-            else:
-                print(f"[审计] 合法连接请求：源 {ip_src} 正在履行准入协议。")
+        # Compliance Check，违反越权访问规制
+        if ip_src not in AUTHORIZED_IPS:
+            print(f"[警告] 非法入侵企图：源 IP {ip_src} 试图发起未经授权的入场请求。")
+        else:
+            print(f"[审计] 合法连接请求：源 {ip_src} 正在履行准入协议。")
+
         # 可用性保护 (Availability Protection)
-        # 如果只看到大量 'S' 而没有其他信号，则记录为“拒绝服务攻击”风险
+        # 核心逻辑：如果同一源短时间内发送大量 SYN，判定为“架构滥用”
+        history = connection_history.get(ip_src, [])
+        history = [t for t in history if now - t < 1.0] # 仅保留 1 秒内的记录
+        history.append(now)
+        connection_history[ip_src] = history
+
+        if len(history) > 10:
+            # 这里的逻辑：代码即法律，当请求频率超出架构承载力，即判定为拒绝服务攻击风险
+            print(f"[致命风险] 检测到 SYN Flood：源 {ip_src} 频率过高，正在消耗系统资源！")
 
 # 启动针对 WMN Lab 环境的合规监控
-print(”正在执行 Layer 4 协议合规性实时审计”)
+print("正在执行 Layer 4 协议合规性实时审计...")
 sniff(filter="tcp", prn=compliance_audit_sniffer, store=0)
+
 
 import time
 TARGET_IP = "192.168.1.100"  # 模拟的IoT网关地址
