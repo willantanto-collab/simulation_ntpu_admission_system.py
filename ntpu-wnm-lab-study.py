@@ -193,24 +193,32 @@ def compliance_inquiry(target_ip):
 # 定义会话状态，L5 的核心就是知道现在是谁在对话，对话到第几次了
 SESSION_ID = "NTPU-6G-TEST" 
 session_counter = 0
+MAX_PAYLOAD_SIZE = 100  # 设定载荷上限，既然单包容易丢，那就手动给它做分片
 
 def send_layer5_packet(target, message):
     global session_counter
-    session_counter += 1
     
-    # Layer 5 核心：构造会话层头部
-    # 功能：确保接收方知道这是属于哪个会话的第几个包
-    l5_header = f"[{SESSION_ID}][SEQ:{session_counter}]" #引入SEQ 序号模拟TCP握手逻辑，确保ICMP隐蔽传输的顺序性与防重放攻击。
-    
-    # 逻辑衔接：将 L5 头部与原始数据拼接，交给 L3/L4 发送
-    # 层级封装：L5嵌套在L4 的 Payload里
-    combined_message = l5_header + message
-    
-    # 调用之前我写好的 Layer 3/4 函数
-    send_covert_packet(target, combined_message)
+    # 逻辑增强：利用列表推导式把一串长指令物理切分
+    # 这种“切片”思路类似于物理时学到的拆分位移是一样的，化整为零才好控制
+    chunks = [message[i:i + MAX_PAYLOAD_SIZE] for i in range(0, len(message), MAX_PAYLOAD_SIZE)]
+    total_chunks = len(chunks)
 
-#发送带会话标识的指令
-send_layer5_packet(TARGET_IP, "RPG-791-SYNC")
+    for index, chunk in enumerate(chunks):
+        session_counter += 1
+        
+        # Layer 5 头部增强：增加 [FRAG:当前片/总片数]
+        # 作用：接收方拿到后可以根据这个标识进行数据重组，确保长指令的完整性
+        l5_header = f"[{SESSION_ID}][SEQ:{session_counter}][FRAG:{index+1}/{total_chunks}]"
+        
+        # 逻辑衔接：将增强后的 L5 头部与切片数据拼接
+        combined_message = l5_header + chunk
+        
+        # 调用之前我写好的 Layer 3/4 函数，层级封装逻辑依然稳固
+        send_covert_packet(target, combined_message)
+
+# 发送带分片标识的指令，测试这种“分段轰炸”的稳定性
+send_layer5_packet(TARGET_IP, "RPG-791-SYNC-SEQUENCE-VERIFICATION")
+
 
 #layer 6
 # 在写 Layer 5 时，我发现原始二进制发出去全是乱码且包很大，尝试搜索能不能把这些不可见的乱码变成普通字母，并让它变小点
