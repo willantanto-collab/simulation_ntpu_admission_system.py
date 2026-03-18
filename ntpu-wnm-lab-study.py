@@ -220,46 +220,53 @@ def send_layer5_packet(target, message):
 send_layer5_packet(TARGET_IP, "RPG-791-SYNC-SEQUENCE-VERIFICATION")
 
 
-#layer 6
-# 在写 Layer 5 时，我发现原始二进制发出去全是乱码且包很大，尝试搜索能不能把这些不可见的乱码变成普通字母，并让它变小点
-# 这两个关键点的搜索下顺着“数据压缩”和“二进制转文本”这两个点，我了解到了 zlib 和 base64
 import base64
 import zlib
+from scapy.all import IP, UDP, send # 引入 Scapy 处理网络层和传输层封装
 
-# Layer 6（加密与压缩）
-def layer6_presentation(raw_data, encrypt=True):
-    # 功能：将原始字符串转换为经过压缩和加密的二进制流
-    # 向上对接 L7 业务数据，向下交付给我写的L5会话函数
-    # 压缩 (Compression)：针对wmn无线带宽优化
-    #.encode()：将文本翻译成二进制，解决不同设备字符不通的问题
-    compressed = zlib.compress(raw_data.encode()) #消除冗余，将原始指令体积缩减 30%-70%
+# Layer 6（表示层：加密与压缩）
+def layer6_presentation(raw_data):
+    # 压缩 (Compression)：针对 WMN 无线带宽优化，减少冗余
+    compressed = zlib.compress(raw_data.encode())
     
-    # 加密(Encryption)：体现Code is Law的安全边界
-    # 使用XOR模拟流加密
-    key = 0x5A  # 简单学到的对称密钥
-    # 将二进制数据通过位运算彻底打乱成不可读的乱码，且仅需相同密钥即可无损还原。
-    # for b in compressed 把压缩后的二进制数据逐个字节进行处理
-    # b ^ key 让每个字节与密钥进行一次二进制碰撞，让其瞬间把原数据变成乱码的一种写法。
-    # bytes [....] 把这一堆处理完的乱码数字重新打包，还原成计算机可以直接发送的二进制包
+    # 加密 (Encryption)：使用 XOR 模拟对称加密，确立安全边界
+    key = 0x5A 
+    # 逐字节异或处理，将压缩后的二进制流打乱
     encrypted = bytes([b ^ key for b in compressed])
     
-    #编码 (Encoding)：确保数据在非正常字符环境下也能传输
-    encoded_data = base64.b64encode(encrypted).decode() #base64.b64encode 能把加密后乱码指令一样的二进制位，强制转换成由 64 个标准字母数字组成的纯文本。
+    # 编码 (Encoding)：使用 Base64 将加密后的二进制转换为标准可见字符
+    # 解决 Layer 5 在传输不可见字符时可能出现的乱码或丢包问题
+    encoded_data = base64.b64encode(encrypted).decode()
     
-    print(f“Data Transformed: {len(raw_data)}B -> {len(encoded_data)}B (Base64)”） #展示数据处理前后的体积变化
+    print(f"L6 Transform: {len(raw_data)}B -> {len(encoded_data)}B (Base64)")
     return encoded_data
 
-#逻辑，利用以上Layer 5 写过的代码逻辑，嵌入 L6 转换
-def send_layer6_to_5_packet(target, original_msg): #original message,orignal_msg
-    # 先通过 Layer 6 处理数据
-    formatted_msg = layer6_presentation(original_msg)
+# Layer 5的扩充部分，用于连接layer 5 和layer 6，这是layer 5 管理会话标签与数据分发的部分
+def send_layer5_packet(target_ip, session_id, payload):
+    # 在负载前缀加入 Session ID，用于对端识别会话流
+    full_payload = f"SID:{session_id}|{payload}"
     
-    # 再交给 Layer 5 处理会话
-    # L5 的功能是不关心内容是否加密的状态，它只负责打上 [SESSION_ID] 标签
-    send_layer5_packet(target, formatted_msg)
+    # 使用 Scapy 构造 IP/UDP 协议栈，模拟真实网络环境下的数据封装
+    # IP(dst) 定位目标主机，UDP(dport) 指定服务端口
+    pkt = IP(dst=target_ip) / UDP(dport=5000) / full_payload
+    
+    # 发送构造好的原始数据包
+    send(pkt, verbose=False)
+    print(f"[L5] Session {session_id} packet sent to {target_ip}")
 
-#调用
+# 逻辑整合：将 L6 处理后的数据交给 L5 发送
+def send_layer6_to_5_packet(target, original_msg):
+    # 先进行 L6 的压缩、加密与编码处理
+    secure_payload = layer6_presentation(original_msg)
+    
+    # 调用 L5 进行会话封装并发送
+    # 设置固定的 Session ID 模拟当前通信会话
+    send_layer5_packet(target, "1024", secure_payload)
+
+# 调用测试
+TARGET_IP = "192.168.1.100" 
 send_layer6_to_5_packet(TARGET_IP, "CRITICAL_COMMAND_RFC791")
+
 
 # Layer 7: 远程控制与遥测协议 (Remote Control Protocol)
 import time
