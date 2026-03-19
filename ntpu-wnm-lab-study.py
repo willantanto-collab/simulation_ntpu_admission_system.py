@@ -67,44 +67,53 @@ def compliance_audit_sniffer(packet):
 print("正在执行 Layer 4 协议合规性实时审计...")
 sniff(filter="tcp", prn=compliance_audit_sniffer, store=0)
 
-
+#layer 3
 import time
+from scapy.all import * # 导入所有工具，省去查文档的时间
+
 TARGET_IP = "192.168.1.100"  # 模拟的IoT网关地址
 SECRET_DATA = "PROMPT_ID_791:ACTION_BYPASS_LEGAL_FILTER" # 模拟一段经过“质询工程”处理后的法律存证
-def send_covert_packet(target, message):
-    print(f"正在通过 Layer 3 协议向 {target} 发送隐蔽数据...")
-    # 构造 IP 层 (Layer 3)
-    # 初始化 IPv4 报头 (符合 RFC 791 标准)
-    # 在 6G/IoT 仿真中，该字段用于标识边缘计算节点或受控终端
-    ip_layer = IP(dst=target)  # dst (Destination Address): 目标 IP 字段，决定了 Layer 3 路由的终点
 
-    #协议封装逻辑 (Protocol Stack Construction)
-    # 利用 Scapy 的层叠操作符 (/) 构造非标准协议栈
-    # Layer 3 (IP）： 处理寻址与路由
-    # Layer 3.5 (ICMP)： 绕过 Layer 4 (TCP) 的三次握手损耗
-    # Payload (Raw Data)： 将 6G 存证指令 (RPG-791) 注入 ICMP 载荷区，实现极简信令传输
+def send_covert_packet(target, message):
+    # 模拟 6G/IoT 实验中的实时反馈
+    print(f"正在向 {target} 注入 Layer 3 流量...")
+
+    # 构造 IP 层 (Layer 3)
+    # [学习笔记] id=791: 我手动指定了 ID 字段，这样在 Wireshark 过滤器里输入 'ip.id == 791' 就能瞬间定位
+    # 这样设定，因为这比默认的随机 ID 更像一个“实验室预设”的特征码
+    ip_layer = IP(dst=target, id=791) 
+
+    # 协议封装逻辑 (Protocol Stack Construction)
+    # 利用 / 符号快速叠加协议，比写复杂的类定义快得多
+    # 将 message 直接作为载荷，实现极简信令传输
     icmp_packet = ip_layer / ICMP() / message 
 
-    # 执行 Layer 3 原始套接字注入 (Raw Socket Injection)
-    # 绕过系统标准传输层规制，直接将封装好的 ICMP 帧投递至链路层
-    # verbose=False: 减少 I/O 开销，适用于 6G 边缘节点的高频信令仿真
-    # 发送数据包
-    #"Sent 1 packets"，查阅Scapy官方help(send)确认verbose参数控制输出
-    # 运行这个使用的工具：Python IDE
-    # 发现过程：while循环模拟6G心跳时，控制台被"Sent 1 packets"刷屏，导致无法观察L3载荷。
-    # 解决逻辑：在终端输入 help(send) 查阅函数定义，发现 verbose 参数默认为开启，平板设为 False 以保持控制台整洁
+    # 逻辑：通过 raw() 函数把包转成十六进制打印出来
+    # 目的：学习 L3 载荷在网线里到底长什么样。看到 '4500' 开头就知道这是 IPv4
+    raw_bytes = raw(icmp_packet)
+    print(f"原始字节流(Hex): {raw_bytes.hex()[:50]}...") 
+
+    # 执行 Layer 3 原始套接字注入
+    # verbose=False: 解决逻辑：防止控制台被 Scapy 自带的 "Sent 1 packets" 刷屏，保持实验界面整洁
     send(icmp_packet, verbose=False)
-    print(f"数据包已发出，载荷长度: {len(message)} bytes") # 通过Wireshark观察到Data字段动态变化，故用Python内置len()实时监控L3载荷大小以评估通信效率
+    
+    # 通过 Python 内置 len() 监控 L3 载荷大小，评估 6G 信令的传输效率
+    print(f"数据包已发出，载荷长度: {len(message)} bytes") 
+
 if __name__ == "__main__":
-    # 模拟 RPG 791 项目中的自动化质询指令发送
-    print("NTPU WMN Lab 模拟环境(RPG-791)")
+    # 模拟 NTPU WMN Lab 实验环境
+    print("NTPU WMN Lab 模拟环境 (RPG-791)")
+    print("提示：已开启 id=791 特征标记，请在 Wireshark 中同步观察")
+    
     try:
         while True:
             send_covert_packet(TARGET_IP, SECRET_DATA)
-            # 设置 5 秒实验间隔。源于平板运行环境的性能限制，且为了手动对齐 Wireshark 抓包序列与代码输出，确保能逐帧分析 L3 字段
-            time.sleep(5)  #实现非连续性信令传输 (Asynchronous Signaling)，模拟 6G/IoT 低功耗模式下的“心跳频率”
-    except KeyboardInterrupt: # 针对平板(Pydroid 3等)运行环境，捕获点击停止按钮产生的信号，避免控制台弹出一整屏红色的报错代码
-        print("\n 实验停止")
+            # 设置 5 秒实验间隔。源于平板运行环境的性能限制，确保我有足够时间切换到抓包软件看一眼
+            time.sleep(5) 
+    except KeyboardInterrupt: 
+        # 针对 Pydroid 3 这种平板环境，捕获停止按钮产生的信号，避免屏幕变红
+        print("\n 实验停止，数据已手动保存。")
+
 
 from scapy.all import *
 def cross_layer_analysis(pkt): # pkt = packet
