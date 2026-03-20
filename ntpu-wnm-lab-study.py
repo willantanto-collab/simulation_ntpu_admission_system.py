@@ -278,46 +278,42 @@ send_layer6_to_5_packet(TARGET_IP, "CRITICAL_COMMAND_RFC791")
 
 
 # Layer 7: 远程控制与遥测协议 (Remote Control Protocol)
+from scapy.all import IP, UDP, Raw, send
+import json
 import time
-import json #在处理 L7 业务指令时，我意识到零散的字符串难以扩展，于是通过搜索‘结构化数据传输标准’发现了 JSON。
-# 它能像容器一样把复杂的指令参数（如坐标、指令名、时间戳）打包成一个标准化的对象，完美衔接了 L7 语义逻辑与 L6 的二进制压缩。
 
-# 功能：定义具体的业务语义（如：获取坐标、控制电机、心跳检测）
-# 特点：将结构化数据（JSON）转为字符串，对接 L6 转换
-
-def layer7_application_handler(action, params=None): #params,parameter 的意思
-    # 模拟一个无人机/物联网节点的应用层指令
-    
-    # 构造应用层报文格式（协议头 + 载荷）
+# 我自学的 L7 应用层逻辑
+def layer7_application_handler(action, params=None):
+    # 查阅资料后，我决定用 JSON 格式，因为它在不同设备间通用性最强
     payload = {
-        "timestamp": int(time.time()), #实现时钟同步、防止重放攻击。在学习NTP（网络时间协议）或TCP握手时，我频繁看到Timestamp的身影
+        "timestamp": int(time.time()), # 学习 NTP 协议时发现时间戳能防重放攻击
         "action": action,
-        "params": params or {}， #变成{} 也就是none,原因是为了减少在抓取不到目标是产生错误（error)
-        "app_version": "WMN-1.0-DEV"
+        "params": params or {},
+        "version": "v1.0-test"
     }
     
-    #将目标对象转为 JSON 字符串，准备交给 L6 压缩和 L5 会话
-    app_data = json.dumps(payload) #在 L7 采用了 JSON 序列化方案，这确保了协议的跨平台兼容性（Cross-platform Interoperability），为未来在不同架构的嵌入式硬件之间进行异构通信打下了基础
-    # Dump 是将内存中的复杂数据瞬间“倒”出来变成一种可持久化或可传输的格式。
-    print(f"[L7] Generating Command: {action}")
-    return app_data
+    L7_data = json.dumps(payload)
+    print(f" [L7] 构造指令: {action}")
+    return L7_data
 
-def send_full_stack_packet(target, action, params=None):
+# L6 处理层：负责把文字转成机器能读的字节
+def layer6_presentation(L7_data):
+    # 这里是最关键的一步转换，Scapy 只能发送 bytes 类型
+    L6_data = L7_data.encode('utf-8')
+    return L6_data
+
+# L5 & Scapy 发送逻辑
+def send_packet_via_scapy(target, L6_data):
+    # 这里参考了 Scapy 文档，把数据塞进 UDP 包
+    # 我选择 UDP 是因为无人机通信需要低延迟
+    packet = IP(dst=target) / UDP(dport=54321) / Raw(load=L6_data)
     
-    # L7 产生原始指令数据
-    L7_data = layer7_application_handler(action, params)
-    
-    # L6 进行压缩、XOR加密、Base64编码，调用我之前写的代码)
-    L6_data = layer6_presentation(L7_data)
-    
-    # L5 注入会话ID和序列号，调用我之前写的代码)
-    # 最终通过Scapy发送 ICMP/UDP隐蔽隧道包
-    send_layer5_packet(target, l6_data)
+    print(f"[L5] 准备注入数据包至: {target}")
+    send(packet, verbose=False) # verbose=False 优化了日志（log)输出，确保控制台只保留核心的协议交互记录。
 
-# 场景：向实验室网关发送一个获取“无人机群实时位置”的请求
-TARGET_IP = "120.126.x.x" # 台北大学网段
-send_full_stack_packet(TARGET_IP, "FETCH_DRONE_POS", {"drone_id": 791, "range": 500})
-
-#场景：模拟传感器阈值报警
-send_full_stack_packet(TARGET_IP, "ALERT_OVERHEAT", {"temp": 85.5, "unit": "Celsius"})
-
+# 模拟实验场景
+TARGET_IP = "120.126.x.x" 
+# 动作：获取无人机位置
+L7 = layer7_application_handler("FETCH_POS", {"id": 791})
+L6 = layer6_presentation(L7)
+send_packet_via_scapy(TARGET_IP, L6)
