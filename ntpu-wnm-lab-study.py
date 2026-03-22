@@ -41,6 +41,23 @@ def compliance_audit_sniffer(packet):
 
         # 核心判定：如果 Flags 是 "S" (SYN)，代表扫描或企图侵入
         if flags == "S":
+                    # 【Day 32 记录：啃下 TCP Options 嵌套列表解析】
+        # 我在 Wireshark 看到 TCP 后面跟着一串 MSS, WScale... 
+        # 但 Scapy 拿出来的 options 是个嵌套列表：[('MSS', 1460), ('WScale', 7)]。
+        # 我折腾了一下，用 dict() 强转才好拿数据。这几行是我为了对齐陈教授论文里的“拓扑特征”加的。
+        if flags == "S":
+            # 我在Wireshark看到 TCP 后面跟着一串 MSS, WScale... 但 Scapy 拿出来的 options 是个嵌套列表。
+            # 我发现可以用 dict() 把这个列表转成字典，这样就能用 .get('MSS') 拿到数据了。
+            tcp_options = dict(packet[TCP].options)
+            mss_val = tcp_options.get('MSS')
+            
+            # 如果 MSS 偏小（比如 < 1400），可能代表黑客中间套了隧道或 VPN。
+            # 我在 Wireshark 调试时发现MSS值的变动，我发现这似乎能从侧面辅助验证陈教授论文中提到的拓扑隐蔽性。
+            if mss_val:
+                print(f"[证据提取] 探测到 TCP 指纹 MSS: {mss_val} (拓扑距离: {dist})") #MSS 是Maximum Segment Size的意思。
+                if mss_val < 1400:
+                    print(f"疑似存在加密隧道，源端拓扑环境可能经过二次封装。")
+
             # 意图审查 (Intent Audit)：违反越权访问规制
             if src_ip not in AUTHORIZED_IPS:
                 print(f"[警告] 非法入侵企图：源 IP {src_ip} (拓扑距离: {dist}) 试图发起未经授权的请求。")
@@ -64,6 +81,10 @@ def compliance_audit_sniffer(packet):
             print(f"[鉴识报告] 连接已建立：源 {src_ip} 已通过握手阶段。")
 
 # 启动针对 WMN Lab 环境的协议合规性实时审计
+# 我原本在查 TCP 的原始标准 RFC 793，结果在翻看维基百科和 IETF 官网时，
+# 看到一个醒目的提示说 RFC 793 已经在 2022 年被 RFC 9293 取代（Obsoleted）了。
+# 既然要学就学最新的，虽然里面很多拥塞控制的算法我看不懂，
+# 但它对 Flags 的基本定义没变，所以我决定在审计逻辑里标注这个最新的标准。
 print("正在执行 Layer 4 协议合规性实时审计 (基于 RFC 791 & RFC 9293)...")
 # 过滤 tcp 流量，store=0 是因为我想像专业工具那样只实时处理而不把包全存进内存，省点资源。
 sniff(filter="tcp", prn=compliance_audit_sniffer, store=0)
