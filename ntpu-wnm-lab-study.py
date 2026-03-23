@@ -137,32 +137,49 @@ if __name__ == "__main__":
         # 针对 Pydroid 3 这种平板环境，捕获停止按钮产生的信号，避免屏幕变红
         print("\n 实验停止，数据已手动保存。")
 
-
+#layer 2
+#layer 2
 from scapy.all import *
+
+# 实测发现RSSI跳变剧烈，建立一个历史列表存最近5个包。
+rssi_history = [] 
+
 def cross_layer_analysis(pkt): # pkt = packet
-    #抓取 RadioTap 头部，获取 Layer 2的物理层链路强度 (RSSI)
+    global rssi_history # 必须加 global 才能在函数里更新这个列表
+    
+    # 抓取 RadioTap 头部，获取 Layer 2的物理层链路强度 (RSSI)
     if pkt.haslayer(RadioTap):
-        #rssi_value 提取自 RadioTap 层，是设备的信号强度 (单位为 dBm)
+        # rssi_value 提取自 RadioTap 层，是设备的信号强度 (单位为 dBm)
         rssi_value = pkt.dBm_AntSignal 
         
+        # 异常捕获：部分管理帧或干扰帧可能无法提取 RSSI (返回 None)
+        # 为防止 sum() 运算因类型不匹配崩溃，需过滤掉无效的物理层采样
+        if rssi_value is None:
+            return 
+        
         # 提取 TCP 拥塞控制的表征——窗口大小
-        if pkt.haslayer(TCP) and rssi_value is not None:
+        if pkt.haslayer(TCP):
+            rssi_history.append(rssi_value)
+            if len(rssi_history) > 5:
+                rssi_history.pop(0) # 无线信号是实时变化的，所以要替换掉旧的数据（FIFO）
+            avg_rssi = sum(rssi_history) / len(rssi_history) # 算平均值以平滑信号抖动
+
             tcp_window = pkt[TCP].window
             src_ip = pkt[IP].src       
             
-            # 控制台实时验证：观测RSSI下降与TCP窗口的协同变化
+            # 观测 RSSI 下降与 TCP 窗口的协同变化
             print(f"[Link-Awareness Test] Source: {src_ip}")
-            print(f"  Layer 2 (RSSI): {rssi_value} dBm")
+            print(f"  Layer 2 (RSSI): {rssi_value} dBm | Avg: {avg_rssi:.1f}") # 这里多显个平均值对比
             print(f"  Layer 4 (TCP Win): {tcp_window}")            
             
-            #实验观测记录逻辑：dBm 为负值，-75 比 -40 更弱
-            if rssi_value < -70: 
-                print("链路质量劣化：RSSI 跌至阈值以下。")
-                if tcp_window < 1000: # 假设观测到窗口剧烈收缩
-                    print("验证成功：TCP 表现过于‘保守’，误将链路损耗判定为网络拥塞。\n")
-# 启动监听，需网卡支持 Monitor Mode
-# store=0 确保长时间实验不会占用过多平板/电脑内存
-sniff(iface="wlan0mon", prn=cross_layer_analysis, store=0) #prn 是一个回调函数
+            # 改用 avg_rssi 判定，防止信号抖动导致误判。
+            if avg_rssi < -70: 
+                print(f"链路质量劣化：平均信号跌至 {avg_rssi:.1f} dBm。")
+                
+                # 实测点：当窗口跌破 1000，验证 TCP 是否因物理层丢包而错误进入拥塞控制
+                if tcp_window < 1000: 
+                    print("验证成功：捕获到 TCP 窗口大幅收缩，说明协议误判了拥塞。\n")
+
 
 #layer 1:
 from scapy.all import *
