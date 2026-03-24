@@ -239,36 +239,42 @@ def compliance_inquiry(target_ip):
 
 # Layer 5
 
-# 定义会话状态，L5 的核心就是知道现在是谁在对话，对话到第几次了
+# Layer 5 核心：会话属性与对话权控
+# 既然 L4 搞定了同步与重传，L5 就要负责“会话权重”与“对话权限”管理
 SESSION_ID = "NTPU-6G-TEST" 
+SESSION_TOKEN = "AUTH-PRO-791"  # 扩充：L5 令牌。L4 链路通了不代表有权对话，确立会话级准入
 session_counter = 0
-MAX_PAYLOAD_SIZE = 100  # 设定载荷上限，既然单包容易丢，那就手动给它做分片
+MAX_PAYLOAD_SIZE = 100 
+SESSION_PRIORITY = "HIGH"       # 扩充：会话优先级。用于 WMN 节点在拥塞时决定丢弃顺序
 
 def send_layer5_packet(target, message):
     global session_counter
     
-    # 逻辑增强：利用列表推导式把一串长指令物理切分
-    # 这种“切片”思路类似于物理时学到的拆分位移是一样的，化整为零才好控制
+    # 逻辑增强：利用列表推导式物理切分指令
     chunks = [message[i:i + MAX_PAYLOAD_SIZE] for i in range(0, len(message), MAX_PAYLOAD_SIZE)]
     total_chunks = len(chunks)
 
     for index, chunk in enumerate(chunks):
         session_counter += 1
         
-        # Layer 5 头部增强：增加 [FRAG:当前片/总片数]
-        # 作用：接收方拿到后可以根据这个标识进行数据重组，确保长指令的完整性
-        l5_header = f"[{SESSION_ID}][SEQ:{session_counter}][FRAG:{index+1}/{total_chunks}]"
+        # Layer 5 头部重构：[SID][TOKEN][PRIO][SEQ][FRAG]
+        # 增加 PRIO：告知 WMN 节点此会话优先级，实现 QoS（服务质量）的会话级控制
+        # 移除 L4 已有的 SYNC 逻辑，保持层级纯粹性，避免功能重叠
+        l5_header = f"[{SESSION_ID}][{SESSION_TOKEN}][P:{SESSION_PRIORITY}][SEQ:{session_counter}][FRAG:{index+1}/{total_chunks}]"
         
-        # 逻辑衔接：将增强后的 L5 头部与切片数据拼接
+        # 逻辑衔接：封装 L5 属性头部与原始切片
         combined_message = l5_header + chunk
         
-        # 调用之前我写好的 Layer 3/4 函数，层级封装逻辑依然稳固
+        # 调用 Layer 3/4 函数，利用 L4 的重传机制保证送达
         send_covert_packet(target, combined_message)
 
-# 发送带分片标识的指令，测试这种“分段轰炸”的稳定性
-send_layer5_packet(TARGET_IP, "RPG-791-SYNC-SEQUENCE-VERIFICATION")
+    # 扩充：会话结束信号 (Dialog Unit End)
+    # 作用：释放对话令牌 (Token)，允许对端发起反向请求，实现高效的半双工切换
+    fin_signal = f"[{SESSION_ID}][{SESSION_TOKEN}][DIALOG:RELEASE]"
+    send_covert_packet(target, fin_signal)
 
-
+# 发送高优先级会话指令，测试 WMN 节点在压力下的优先级调度
+send_layer5_packet(TARGET_IP, "RPG-791-HIGH-PRIORITY-TASK-SEQUENCE")
 import base64
 import zlib
 from scapy.all import IP, UDP, send # 引入 Scapy 处理网络层和传输层封装
