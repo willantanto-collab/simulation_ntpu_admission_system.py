@@ -23,3 +23,22 @@ def arp_scan(ip_range):
         clients.append({'ip': received.psrc, 'mac': received.hwsrc})
     
     return clients
+
+
+from scapy.data import MANUFDB  # MANUFDB 是 Manufacturer Database（厂商数据库）。它的核心作用是把网络设备的 MAC 地址（物理地址）转换成我们可读的厂商名称（比如 Apple, Samsung, Huawei）。 
+
+def get_vendor(mac):
+    # Scapy 自带的 OUI 数据库查询
+    return MANUFDB.get_manuf(mac)
+
+# 在你原有的循环里调用
+for sent, received in result:
+    vendor = get_vendor(received.hwsrc)
+    clients.append({'ip': received.psrc, 'mac': received.hwsrc, 'vendor': vendor})
+
+
+# 我关注到 WMN Lab 在无线网路拓扑和安全方面的研究。为了理解网路中节点的物理行为，我参考 RFC 的官方文件使用 Scapy 手写了 ARP 扫描器。
+# 我没有依赖高层工具，而是直接操作二层包头，并集成 MANUFDB 来识别异质设备的厂商指纹，以此来模拟实验室环境下的资产发现逻辑。
+
+
+
