@@ -85,5 +85,42 @@ def capture_and_audit(pkt):
 print("启动身份凭证自动化审计工具...")
 sniff(filter="tcp port 80", prn=capture_and_audit, store=0)
 
+from scapy.all import *
+import threading
 
+# 实验目标：全网段资产发现 (Network Discovery)，定位开启 HTTP 服务 (Port 80) 的 IAM 潜在泄露源。
+def check_service(target_ip):
+    # 构造 TCP SYN 报文 (Flags="S")。
+    # 逻辑依据：利用半开放扫描确认端口监听状态。
+    # 性能控制：timeout=0.2 经过实验环境测速，可平衡扫描覆盖率与线程回收效率。
+    resp = sr1(IP(dst=target_ip)/TCP(dport=80, flags="S"), timeout=0.2, verbose=False)
+    
+    # 响应特征判定：识别返回包中的 SYN+ACK (SA) 标志位。
+    # 逻辑：我是利用的 TCP 状态机的“要约-承诺”机制。
+    # 发送 SYN ('S')：主动探测目标是否愿意建立连接。
+    # 接收 SA (SYN+ACK)：去试着识别到对方的积极响应，判定 80 端口为活跃资产。
+    if resp and "SA" in str(resp[TCP].flags):
+        print(f"Active Service Identified: {target_ip}")
+        # 持久化存储：去将活跃资产写入审计日志，作为后续身份凭证嗅探的目标清单。
+        with open("network_assets.log", "a") as f:
+            f.write(f"Insecure_IAM_Node: {target_ip}:80\n") #IAM mean Identity and Access Management
 
+def run_discovery(ip_prefix):
+    """
+    通过并发模式（Concurrency）重构资产普查逻辑，解决单线程 I/O 阻塞问题。
+    """
+    print(f"启动全网段 {ip_prefix}.0/24 身份认证节点审计...")
+    threads = []
+    for i in range(1, 255):
+        ip = f"{ip_prefix}.{i}"
+        # 参数封装：args=(ip,) 为 Python 多线程元组传参规范，确保变量作用域隔离。
+        t = threading.Thread(target=check_service, args=(ip,))
+        threads.append(t)
+        t.start()
+
+    for t in threads:
+        t.join()
+    print("审计清单生成完毕。")
+
+if __name__ == "__main__":
+    run_discovery("192.168.1")
