@@ -124,3 +124,25 @@ def run_discovery(ip_prefix):
 
 if __name__ == "__main__":
     run_discovery("192.168.1")
+
+
+from scapy.all import *
+# 能看到局域网里有谁
+def simple_scan(ip_range):
+    print(f"Scanning: {ip_range} ...")
+    
+    # 构造最基本的 ARP 请求包
+    # 只用了最基础的层级叠加，没有复杂的参数
+    request = Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(pdst=ip_range)
+    
+    # srp 发送并接收（L2层），设置 1 秒超时
+    ans, unans = srp(request, timeout=1, verbose=True)
+    
+    print("\n Found Devices")
+    for send, receive in ans:
+        # 直接传输，让IP 和 MAC收，并没做任何格式对齐
+        print("IP: " + receive.psrc + "  MAC: " + receive.hwsrc)
+
+# 临时测试一个网段
+simple_scan("192.168.1.0/24")
+
