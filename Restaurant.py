@@ -49,4 +49,27 @@ def TakeOrder():
                 print("Queue is full")
         else:
             print(f"Error : {clean_item} is not on the menu")
-                
+#b(iii)
+def EnqueueBeverage(DataToEnqueue : str):
+    global BeverageRaerPointer,BeverageQueue
+    if BeverageRaerPointer == 10:
+        return False
+    else:
+        BeverageQueue[BeverageRearPointer] = DataToEnqueue
+        BeverageRearPointer += 1
+        return True
+#b(iv) 
+def ReadOrderData():
+    try: 
+        order_file = open("Order.txt","r")
+        for line in order_file:
+            item = line.strip()
+            success = EnqueueBeverage(item)
+            if success:
+                print(f"Added {item} to queue.")
+            else:
+                print("Queue is full.More item will not be added.")
+                break
+        order_file.close()
+    except FileNotFoundError:
+        print("Error,order_file not found")
