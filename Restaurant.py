@@ -73,3 +73,22 @@ def ReadOrderData():
         order_file.close()
     except FileNotFoundError:
         print("Error,order_file not found")
+# c(i)
+def DequeueBeverage(ReturnData:str):
+    if BeverageFrontPointer == BeverageRearPointer:
+        return ""
+    else:
+        ReturnData = BeverageQueue[BeverageFrontPointer]
+        BeverageFrontPointer += 1
+        return ReturnData
+#c(ii)
+def ServeItem():
+    try:
+        order_file = open("Order.txt","r")
+        for line in order_file:
+            Sitem = line.strip()
+            success = BeverageQueue[Sitem]
+            if success = "" :
+                print("No more item to be served")
+            else:
+                print(f"You ordered {Beverage}")
