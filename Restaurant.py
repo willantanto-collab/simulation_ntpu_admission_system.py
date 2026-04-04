@@ -92,3 +92,43 @@ def ServeItem():
                 print("No more item to be served")
             else:
                 print(f"You ordered {Beverage}")
+#d (i)
+Displaymenu()
+TakeOrder()
+ReadOrderData()
+ServeItem()
+
+#2 a)
+# Declare global 2D array Data (5 rows, 4 columns)
+Data = [[0 for c in range(4)] for r in range(5)]
+
+# Declare global variable Rows to store number of rows entered
+Rows = 0
+
+#2)b)
+def SetUp():
+    global Data, Rows
+    
+    # Prompt and validate the number of rows (between 1 and 5)
+    valid_rows = False
+    while not valid_rows:
+        Rows = int(input("Enter the number of rows (1 to 5): "))
+        if 1 <= Rows <= 5:
+            valid_rows = True
+        else:
+            print("Invalid input. Please enter a number between 1 and 5.")
+
+    # Nested loops to input numbers for every column in each row
+    for r in range(Rows):
+        print("Entering data for Row", r + 1)
+        for c in range(4):
+            Data[r][c] = int(input("Enter integer for column " + str(c + 1) + ": "))
+    
+    # Print the current content of the Data array
+    print("The Current Data Array Content")
+    for r in range(Rows):
+        print("Row", r, ":", Data[r])
+    print("Total rows stored:", Rows)
+
+
+
