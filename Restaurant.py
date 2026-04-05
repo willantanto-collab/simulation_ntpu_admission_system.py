@@ -129,6 +129,27 @@ def SetUp():
     for r in range(Rows):
         print("Row", r, ":", Data[r])
     print("Total rows stored:", Rows)
+    #2 c)
+SetUp()
+#2d)i)
+# #2 d) i)
+def BubbleSort():
+    global Data, Rows
+    # Loop through each row that has data
+    for r in range(Rows):
+        # Standard bubble sort for 4 columns
+        for i in range(4):
+            for j in range(0, 4 - i - 1):
+                if Data[r][j] > Data[r][j + 1]:
+                    # Swap the elements
+                    temp = Data[r][j]
+                    Data[r][j] = Data[r][j + 1]
+                    Data[r][j + 1] = temp
+#d)ii)
+BubbleSort()
+print("Content of sorted Data Array:")
+    for r in range(Rows):
+        print(f"Row {r} : {Data[r]}")
 
 
 
