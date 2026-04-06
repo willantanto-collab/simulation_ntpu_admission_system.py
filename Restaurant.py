@@ -150,6 +150,40 @@ BubbleSort()
 print("Content of sorted Data Array:")
     for r in range(Rows):
         print(f"Row {r} : {Data[r]}")
+# e) i) Recursive Binary Search Function
+def RecursiveBinarySearch(rowNumber, DataToFind, low, high):
+    # Base case: if low index exceeds high, the item is not in the array
+    if low > high:
+        return -1
+    
+    # Calculate the middle index
+    mid = (low + high) // 2
+    
+    # Check if the middle element is the target
+    if Data[rowNumber][mid] == DataToFind:
+        return mid
+    # If the target is smaller, search the left half
+    elif Data[rowNumber][mid] > DataToFind:
+        return RecursiveBinarySearch(rowNumber, DataToFind, low, mid - 1)
+    # If the target is larger, search the right half
+    else:
+        return RecursiveBinarySearch(rowNumber, DataToFind, mid + 1, high)
+# (e) ii) 
+# First, ensure BubbleSort() has been called so the rows are sorted
+BubbleSort()
+
+# Get user input for search
+search_row = int(input("Enter the row index to search (0 to " + str(Rows-1) + "): "))
+target_val = int(input("Enter the value to find: "))
+
+# Call the search (low is 0, high is 3 because there are 4 columns)
+index_found = RecursiveBinarySearch(search_row, target_val, 0, 3)
+
+if index_found != -1:
+    print(f"Found {target_val} at Column Index: {index_found}")
+else:
+    print("Value not found in this row.")
+
 
 
 
