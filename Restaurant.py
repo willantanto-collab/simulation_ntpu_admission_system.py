@@ -184,6 +184,52 @@ if index_found != -1:
 else:
     print("Value not found in this row.")
 
+#3 a)i)
+class Device:
+    def __init__(self, device_name, brand, battery_life, price):
+        # Private attributes
+        self.__device_name = device_name
+        self.__brand = brand
+        self.__battery_life = battery_life
+        self.__price = price
+
+    # Getter methods
+    def get_device_name(self):
+        return self.__device_name
+
+    def get_brand(self):
+        return self.__brand
+
+    def get_battery_life(self):
+        return self.__battery_life
+
+    def get_price(self):
+        return self.__price
+
+    # Method to output details
+    def print_details(self):
+        print(f"Device: {self.__device_name}")
+        print(f"Brand: {self.__brand}")
+        print(f"Battery Life: {self.__battery_life} hours")
+        print(f"Price: ${self.__price:}")
+#a)ii)
+class Phone(Device):
+    def __init__(self, device_name, brand, battery_life, price, storage):
+        # Call the parent constructor to initialize inherited attributes
+        super().__init__(device_name, brand, battery_life, price)
+        # Private attribute specific to Phone
+        self.__storage = storage
+
+    # Getter for storage
+    def get_storage(self):
+        return self.__storage
+
+    # Redefined print_details method (Polymorphism)
+    def print_details(self):
+        # Call the parent print_details first
+        super().print_details()
+        # Add the storage detail
+        print(f"Storage: {self.__storage} GB")
 
 
 
