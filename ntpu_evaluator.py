@@ -17,6 +17,9 @@ class AdmissionCalculator:
         elif self.gpa >= 3.5:
             return "Eligible for Partial Scholarship"
         return "No scholarship available at this level."
+    def get_interview_boost(self, interview_score):
+        #面试表现加分 (0-10分)
+        return interview_score * 0.5
 
 # Example usage for even 1 hour study
 my_app = AdmissionCalculator(gpa=3.5)
@@ -32,3 +35,14 @@ if chance < 70:
     print("Action: Increase study intensity.")
 else:
     print("Status: On track.")
+
+# 面试分数例子
+interview_score = 8.5 
+boost = my_app.get_interview_boost(interview_score)
+
+# 计算最终总概率 (原有概率 + 面试加分）
+final_chance = min(99.0, chance + boost)
+
+print(f"Interview Score: {interview_score}/10")
+print(f"Interview Boost: +{boost}%")
+print(f"Scholarship Eligibility: {scholarship_status}")
