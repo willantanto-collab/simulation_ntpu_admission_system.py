@@ -11,6 +11,18 @@ class TimelineManager:
             "Regular_Decision": "2027-01-05",
             "Scholarship_Application": "2026-12-01"
         }
+    def get_days_remaining(self, stage_name):
+        # 计算距离指定截止日期还有多少天。
+        if stage_name not in self.deadlines:
+            return None
+        
+        target_date = datetime.strptime(self.deadlines[stage_name], "%Y-%m-%d")  #strptime,复习python 官方文件的时候，有写。
+        today = datetime.now()
+        
+        # 计算差值并返回天数
+        delta = target_date - today
+        return delta.days
+    
 
     def check_urgency(self, stage_name):
         # 根据剩余天数判断紧急程度。
