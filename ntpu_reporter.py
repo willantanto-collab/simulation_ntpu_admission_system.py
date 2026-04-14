@@ -21,8 +21,7 @@ class TimelineManager:
         
         # 计算差值并返回天数
         delta = target_date - today
-        return delta.days
-    
+        return delta.days   
 
     def check_urgency(self, stage_name):
         # 根据剩余天数判断紧急程度。
@@ -34,3 +33,11 @@ class TimelineManager:
         if days < 30: 
           return "URGENT"
         return "NORMAL"
+if __name__ == "__main__": #我在看其他人github 写的代码的时候，看到了这一行。搜索后知道，这一行是专业代码的‘标配’
+   # 效果是它能防止代码在 import 时产生其他风险。我觉得这种逻辑隔离非常严谨，就把它应用到了我的项目中。
+    tm = TimelineManager()
+    days_left = tm.get_days_remaining("Regular_Decision")
+    status = tm.check_urgency("Regular_Decision")
+    print(f"Deadline Status: {days_left} days left [{status}]")
+
+
