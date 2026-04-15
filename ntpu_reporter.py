@@ -33,11 +33,20 @@ class TimelineManager:
         if days < 30: 
           return "URGENT"
         return "NORMAL"
+    def is_missed(self, stage_name):
+        # 增加"过期判定"逻辑
+        days = self.get_days_remaining(stage_name)
+        if days is not None and days < 0:
+            return True
+        return False
 if __name__ == "__main__": #我在看其他人github 写的代码的时候，看到了这一行。搜索后知道，这一行是专业代码的‘标配’
    # 效果是它能防止代码在 import 时产生其他风险。我觉得这种逻辑隔离非常严谨，就把它应用到了我的项目中。
     tm = TimelineManager()
     days_left = tm.get_days_remaining("Regular_Decision")
     status = tm.check_urgency("Regular_Decision")
     print(f"Deadline Status: {days_left} days left [{status}]")
+    if tm.is_missed("Regular_Decision"):
+        print("This deadline has already passed.")
+
 
 
