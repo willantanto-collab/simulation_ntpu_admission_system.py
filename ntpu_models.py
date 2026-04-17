@@ -155,7 +155,16 @@ class StudentProject: #分析学生提交的单一最优秀项目
     else:
       return "判定结果：基础稳固，建议增加工程实践深度。”
 #之前写这个代码的时候，我是通过网上搜索来的，自学并尝试去理解，比如min 会更为简洁。
-    
+class ProfileScorer:
+    def __init__(self):
+        # 定义更为详细的背景加分项
+        self.bonus_map = {
+            "olympiad_medal": 15,    # 奥赛奖牌
+            "student_council": 10,   # 学生会领袖
+            "volunteer_hours_50": 5, # 志愿服务满50小时
+            "internship": 8,         # 相关专业实习
+            "intl_exchange": 7       # 国际交流经验
+        }
     
 
 
