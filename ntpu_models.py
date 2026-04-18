@@ -165,6 +165,25 @@ class ProfileScorer:
             "internship": 8,         # 相关专业实习
             "intl_exchange": 7       # 国际交流经验
         }
+    def calculate_background_bonus(self, activities_list):
+        # 根据活动列表计算背景加分，并设定上限以保证公平性。
+        
+        total_bonus = 0
+        achievements = []
+        
+        for activity in activities_list:
+            if activity in self.bonus_map:
+                total_bonus += self.bonus_map[activity]
+                achievements.append(activity)
+        
+        # 设置封顶分（例如背景分最高25分），防止过度堆砌
+        final_bonus = min(25, total_bonus)
+        
+        return {
+            "bonus_score": final_bonus,
+            "qualified_items": achievements,
+            "analysis": f"通过 {len(achievements)} 项活动获得了 {final_bonus} 分加分。"
+        }
     
 
 
