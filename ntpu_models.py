@@ -184,6 +184,17 @@ class ProfileScorer:
             "qualified_items": achievements,
             "analysis": f"通过 {len(achievements)} 项活动获得了 {final_bonus} 分加分。"
         }
+# 示例运行
+if __name__ == "__main__":
+    scorer = ProfileScorer()
+    # 模拟一个 JC 学生的背景
+    my_activities = ["student_council", "volunteer_hours_50", "intl_exchange"]
+    result = scorer.calculate_background_bonus(my_activities)
+    
+    print(f"额外分数评估")
+    print(f"识别到的加分项: {result['qualified_items']}")
+    print(f"最终加分: {result['bonus_score']}")
+    print(f"评价: {result['analysis']}")
     
 
 
