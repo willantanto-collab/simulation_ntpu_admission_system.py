@@ -1,4 +1,19 @@
 # -*- coding: utf-8 -*-
+# 错误类型常量定义
+ERR_TYPE = "类型错误"
+ERR_FULL = "空间溢出"
+ERR_PTR  = "无效索引"
+ERR_LOOP = "循环引用"
+
+def is_circular(node_idx, path_set)：
+    # 检查插入操作是否会导致环路
+    if node_idx == -1:
+        return False
+    if node_idx in path_set:
+        print(f"[{ERR_LOOP}] 节点 {node_idx} 构成闭环，拒绝操作")
+        return True
+    return False
+
 def is_integer(value):
     #检查是否为整数，防止 InsertNode 时因类型错误导致比较失败
     try:
