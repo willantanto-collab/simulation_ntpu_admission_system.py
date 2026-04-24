@@ -1,4 +1,4 @@
-
+# Stack
 class Stack:
     def __init__(self, size):
         self.stack = []
@@ -30,3 +30,45 @@ class Stack:
         if not self.is_empty():
             return self.stack[-1]
         return None
+# Queue
+class CircularQueue:
+    def __init__(self, maxSize):
+        self.maxSize = maxSize
+        self.queue = [None for i in range(maxSize)]
+        self.front = 0
+        self.rear = -1
+        self.numberOfItems = 0
+
+    def isFull(self):
+        return self.numberOfItems == self.maxSize
+
+    def isEmpty(self):
+        return self.numberOfItems == 0
+
+    def enqueue(self, item):
+        if self.isFull():
+            print("Queue Overflow!")
+        else:
+            self.rear = (self.rear + 1) % self.maxSize #Use the modulo operator (%) to make the pointer wrap around to the start
+            self.queue[self.rear] = item
+            self.numberOfItems += 1
+            print(f"Enqueued: {item}")
+
+    def dequeue(self):
+        if self.isEmpty():
+            print("Queue Underflow!")
+            return None
+        else:
+            item = self.queue[self.front]
+            self.queue[self.front] = None # 可选：清除数据
+            # 核心逻辑：Front 指针同样需要循环
+            self.front = (self.front + 1) % self.maxSize
+            self.numberOfItems -= 1
+            return item
+q = CircularQueue(3)
+q.enqueue("Data1")
+q.enqueue("Data2")
+q.enqueue("Data3")
+print(q.dequeue())    # 输出 Data1
+q.enqueue("Data4")    
+
