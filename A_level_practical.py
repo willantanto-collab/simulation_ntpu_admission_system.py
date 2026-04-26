@@ -117,3 +117,25 @@ def calculate_averages(data, num_rows):
 actual_rows = load_and_process("data.txt")
 calculate_averages(student_data, actual_rows)
 
+def insertion_sort(alist):
+    # The first element is considered sorted, so we start from index 1
+    for index in range(1, len(alist)):
+        current_value = alist[index]
+        position = index
+
+        # Shift elements of the sorted part that are greater than current_value
+        while position > 0 and alist[position - 1] > current_value:
+            alist[position] = alist[position - 1]
+            position = position - 1
+
+        # Insert the value into its correct location
+        alist[position] = current_value
+
+    return alist
+
+# Example usage
+data = [9, 5, 4, 15, 3]
+sorted_data = insertion_sort(data)
+print(sorted_data)
+
+
