@@ -138,4 +138,41 @@ data = [9, 5, 4, 15, 3]
 sorted_data = insertion_sort(data)
 print(sorted_data)
 
+#Recursion Binary tree
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def buildTree(preorder, inorder):
+    # Mapping inorder values to indices for O(1) lookup
+    idx_map = {val: i for i, val in enumerate(inorder)}
+    
+    def helper(pre_start, pre_end, in_start, in_end):
+        # Base case: no elements to construct the tree
+        if pre_start > pre_end:
+            return None
+
+        # Root is the first element in current preorder segment
+        root_val = preorder[pre_start]
+        root = TreeNode(root_val)
+
+        # Locate root in inorder to split left/right subtrees
+        root_idx = idx_map[root_val]
+        left_size = root_idx - in_start
+
+        # Recursively build subtrees using index boundaries
+        root.left = helper(pre_start + 1, pre_start + left_size, in_start, root_idx - 1)
+        root.right = helper(pre_start + left_size + 1, pre_end, root_idx + 1, in_end)
+
+        return root
+
+    return helper(0, len(preorder) - 1, 0, len(inorder) - 1)
+
+# Example Execution
+# Preorder: [3, 9, 20, 15, 7]
+# Inorder:  [9, 3, 15, 20, 7]
+root = buildTree([3, 9, 20, 15, 7], [9, 3, 15, 20, 7])
+
 
