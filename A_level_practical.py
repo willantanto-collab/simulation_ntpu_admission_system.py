@@ -175,4 +175,46 @@ def buildTree(preorder, inorder):
 # Inorder:  [9, 3, 15, 20, 7]
 root = buildTree([3, 9, 20, 15, 7], [9, 3, 15, 20, 7])
 
+#Linked list
+class Node:
+    def __init__(self, data):
+        self.data = data      # The actual value stored
+        self.next = None      # Pointer to the next node
+
+class LinkedList:
+    def __init__(self):
+        self.head = None      # Start of the list
+
+    def insert_at_end(self, data):
+        new_node = Node(data)
+        
+        # If the list is empty, make new node the head
+        if self.head is None:
+            self.head = new_node
+            return
+        
+        # Otherwise, traverse to the last node
+        current = self.head
+        while current.next:
+            current = current.next
+        
+        # Point the last node to the new node
+        current.next = new_node
+
+    def display(self):
+        current = self.head
+        while current:
+            print(current.data, end=" -> ")
+            current = current.next
+        print("None")
+
+# --- Practical Test ---
+my_list = LinkedList()
+my_list.insert_at_end("A")
+my_list.insert_at_end("B")
+my_list.insert_at_end("C")
+
+my_list.display() 
+# Output: A -> B -> C -> None
+
 
