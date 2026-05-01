@@ -22,7 +22,11 @@ class AdmissionCalculator:
         return interview_score * 0.5
     def simulate_decision(self, chance): 
         return random.uniform(chance - 5, chance + 5) >= 75  # 模拟含随机波动的最终录取决策
-
+    def get_safety_status(self, chance)
+        if chance >= 90: return "Safety"       # 保底
+        if chance >= 70: return "Target"       # 核心目标
+        if chance >= 50: return "Reach"        # 冲刺
+        return "Unlikely"                      # 极难
 
 # Example usage for even 1 hour study
 my_app = AdmissionCalculator(gpa=3.5)
